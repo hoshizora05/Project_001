@@ -9,14 +9,14 @@ namespace CharacterSystem
 
     public interface ICharacter
     {
-        string Id { get; }
-        string Name { get; }
-        Dictionary<SkillType, float> Skills { get; }
-        Dictionary<AttributeType, float> Attributes { get; }
-        MentalState.EmotionalState CurrentEmotionalState { get; }
-        Dictionary<PreferenceType, float> Preferences { get; }
-        LocationType CurrentLocation { get; }
-        Schedule DailySchedule { get; }
+        string CharacterId { get; }
+        string CharacterName { get; }
+        Dictionary<SkillType, float> CharacterSkills { get; }
+        Dictionary<AttributeType, float> CharacterAttributes { get; }
+        MentalState.EmotionalState CharacterCurrentEmotionalState { get; }
+        Dictionary<PreferenceType, float> CharacterPreferences { get; }
+        LocationType CharacterCurrentLocation { get; }
+        Schedule CharacterDailySchedule { get; }
     }
 
     public interface IDialogueSystem
@@ -314,17 +314,17 @@ namespace CharacterSystem
         {
             if (!IsDialogueAvailable(player, npc))
             {
-                Debug.LogWarning($"Dialogue not available between {player.Name} and {npc.Name}");
+                Debug.LogWarning($"Dialogue not available between {player.CharacterName} and {npc.CharacterName}");
                 return;
             }
             string dialogueId = GetDialogueId(player, npc);
 
             DialogueContext context = new DialogueContext
             {
-                Location = npc.CurrentLocation,
+                Location = npc.CharacterCurrentLocation,
                 TimeOfDay = GetCurrentTimeOfDay(),
                 PreviousTopic = DialogueTopic.Greeting,
-                NpcCurrentEmotion = npc.CurrentEmotionalState
+                NpcCurrentEmotion = npc.CharacterCurrentEmotionalState
             };
             _activeDialogues[dialogueId] = context;
 
@@ -351,7 +351,7 @@ namespace CharacterSystem
             // Optional: skip or keep location checks if you prefer
             if (!IsDialogueAvailable(player, npc))
             {
-                Debug.LogWarning($"Dialogue not available between {player.Name} and {npc.Name}");
+                Debug.LogWarning($"Dialogue not available between {player.CharacterName} and {npc.CharacterName}");
                 return;
             }
 
@@ -364,10 +364,10 @@ namespace CharacterSystem
             // For cleanliness, let's store it in a custom field inside DialogueContext.
             DialogueContext context = new DialogueContext
             {
-                Location = npc.CurrentLocation,
+                Location = npc.CharacterCurrentLocation,
                 TimeOfDay = GetCurrentTimeOfDay(),
                 PreviousTopic = DialogueTopic.Special,  // or any default
-                NpcCurrentEmotion = npc.CurrentEmotionalState
+                NpcCurrentEmotion = npc.CharacterCurrentEmotionalState
             };
 
             // If you want to store the conversationId, we can do so in a 
@@ -401,7 +401,7 @@ namespace CharacterSystem
         {
             if (!IsDialogueAvailable(player, npc))
             {
-                Debug.LogWarning($"Dialogue not available between {player.Name} and {npc.Name}");
+                Debug.LogWarning($"Dialogue not available between {player.CharacterName} and {npc.CharacterName}");
                 return;
             }
 
@@ -409,10 +409,10 @@ namespace CharacterSystem
 
             DialogueContext context = new DialogueContext
             {
-                Location = npc.CurrentLocation,
+                Location = npc.CharacterCurrentLocation,
                 TimeOfDay = GetCurrentTimeOfDay(),
                 PreviousTopic = DialogueTopic.Special,
-                NpcCurrentEmotion = npc.CurrentEmotionalState
+                NpcCurrentEmotion = npc.CharacterCurrentEmotionalState
             };
             _activeDialogues[dialogueId] = context;
 
@@ -581,7 +581,7 @@ namespace CharacterSystem
             
             if (!_activeDialogues.ContainsKey(dialogueId))
             {
-                Debug.LogError($"No active dialogue found between {player.Name} and {npc.Name}");
+                Debug.LogError($"No active dialogue found between {player.CharacterName} and {npc.CharacterName}");
                 return;
             }
             
@@ -623,7 +623,7 @@ namespace CharacterSystem
             }
 
             // Record in memory
-            _memoryManager.RecordNegativeImpression(player.Id, npc.Id, choice.Topic.ToString());
+            _memoryManager.RecordNegativeImpression(player.CharacterId, npc.CharacterId, choice.Topic.ToString());
             
             // Update context
             context.PreviousTopic = choice.Topic;
@@ -739,16 +739,16 @@ namespace CharacterSystem
         private bool IsDialogueAvailable(ICharacter player, ICharacter npc)
         {
             // Check if they're in the same location
-            if (player.CurrentLocation != npc.CurrentLocation)
+            if (player.CharacterCurrentLocation != npc.CharacterCurrentLocation)
                 return false;
             
             // Check NPC schedule availability
             TimeOfDay currentTime = GetCurrentTimeOfDay();
-            if (npc.DailySchedule.DailyLocations[currentTime] != npc.CurrentLocation)
+            if (npc.CharacterDailySchedule.DailyLocations[currentTime] != npc.CharacterCurrentLocation)
                 return false;
             
             // Check relationship restrictions (e.g., certain NPCs may not talk to the player below a threshold)
-            float relationshipLevel = _relationshipNetwork.GetRelationshipValue(player.Id, npc.Id, RelationshipParameter.Friendship);
+            float relationshipLevel = _relationshipNetwork.GetRelationshipValue(player.CharacterId, npc.CharacterId, RelationshipParameter.Friendship);
             if (relationshipLevel < 0)
                 return false;
             
@@ -796,15 +796,15 @@ namespace CharacterSystem
             switch (requirement.Type)
             {
                 case RequirementType.Skill:
-                    return player.Skills.ContainsKey((SkillType)Enum.Parse(typeof(SkillType), requirement.Parameter)) && 
-                           player.Skills[(SkillType)Enum.Parse(typeof(SkillType), requirement.Parameter)] >= requirement.MinValue;
+                    return player.CharacterSkills.ContainsKey((SkillType)Enum.Parse(typeof(SkillType), requirement.Parameter)) && 
+                           player.CharacterSkills[(SkillType)Enum.Parse(typeof(SkillType), requirement.Parameter)] >= requirement.MinValue;
                 
                 case RequirementType.Attribute:
-                    return player.Attributes.ContainsKey((AttributeType)Enum.Parse(typeof(AttributeType), requirement.Parameter)) && 
-                           player.Attributes[(AttributeType)Enum.Parse(typeof(AttributeType), requirement.Parameter)] >= requirement.MinValue;
+                    return player.CharacterAttributes.ContainsKey((AttributeType)Enum.Parse(typeof(AttributeType), requirement.Parameter)) && 
+                           player.CharacterAttributes[(AttributeType)Enum.Parse(typeof(AttributeType), requirement.Parameter)] >= requirement.MinValue;
                 
                 case RequirementType.RelationshipLevel:
-                    return _relationshipNetwork.GetRelationshipValue(player.Id, npc.Id, 
+                    return _relationshipNetwork.GetRelationshipValue(player.CharacterId, npc.CharacterId, 
                         (RelationshipParameter)Enum.Parse(typeof(RelationshipParameter), requirement.Parameter)) >= requirement.MinValue;
                 
                 case RequirementType.TimeOfDay:
@@ -814,7 +814,7 @@ namespace CharacterSystem
                     return context.Location.ToString() == requirement.Parameter;
                 
                 case RequirementType.Event:
-                    return _memoryManager.HasExperiencedEvent(npc.Id, requirement.Parameter);
+                    return _memoryManager.HasExperiencedEvent(npc.CharacterId, requirement.Parameter);
                 
                 default:
                     return false;
@@ -835,13 +835,13 @@ namespace CharacterSystem
             
             // Player skill relevance
             SkillType relevantSkill = GetRelevantSkill(option.Topic);
-            if (player.Skills.ContainsKey(relevantSkill))
-                relevance += player.Skills[relevantSkill] * 0.1f;
+            if (player.CharacterSkills.ContainsKey(relevantSkill))
+                relevance += player.CharacterSkills[relevantSkill] * 0.1f;
             
             // Relationship relevance
             foreach (var effect in option.PotentialEffects)
             {
-                float currentValue = _relationshipNetwork.GetRelationshipValue(player.Id, npc.Id, effect.Key);
+                float currentValue = _relationshipNetwork.GetRelationshipValue(player.CharacterId, npc.CharacterId, effect.Key);
                 
                 // If this parameter is low and the effect is positive, it's more relevant
                 if (currentValue < 3 && effect.Value > 0)
@@ -863,14 +863,14 @@ namespace CharacterSystem
             // Skill modifier
             float skillModifier = 0f;
             SkillType relevantSkill = GetRelevantSkill(choice.Topic);
-            if (player.Skills.ContainsKey(relevantSkill))
+            if (player.CharacterSkills.ContainsKey(relevantSkill))
             {
-                skillModifier = (player.Skills[relevantSkill] - 5f) / 5f; // Normalize around 0
+                skillModifier = (player.CharacterSkills[relevantSkill] - 5f) / 5f; // Normalize around 0
             }
             
             // Affinity modifier
             float affinityModifier = 0f;
-            float friendship = _relationshipNetwork.GetRelationshipValue(player.Id, npc.Id, RelationshipParameter.Friendship);
+            float friendship = _relationshipNetwork.GetRelationshipValue(player.CharacterId, npc.CharacterId, RelationshipParameter.Friendship);
             affinityModifier = (friendship - 5f) / 5f; // Normalize around 0
             
             // Situation modifier
@@ -902,9 +902,9 @@ namespace CharacterSystem
         {
             foreach (var effect in choice.PotentialEffects)
             {
-                float currentValue = _relationshipNetwork.GetRelationshipValue(player.Id, npc.Id, effect.Key);
+                float currentValue = _relationshipNetwork.GetRelationshipValue(player.CharacterId, npc.CharacterId, effect.Key);
                 float newValue = Mathf.Clamp(currentValue + effect.Value, 0f, 10f);
-                _relationshipNetwork.SetRelationshipValue(player.Id, npc.Id, effect.Key, newValue);
+                _relationshipNetwork.SetRelationshipValue(player.CharacterId, npc.CharacterId, effect.Key, newValue);
             }
         }
 
@@ -913,10 +913,10 @@ namespace CharacterSystem
             // Double the relationship effects
             foreach (var effect in choice.PotentialEffects)
             {
-                float currentValue = _relationshipNetwork.GetRelationshipValue(player.Id, npc.Id, effect.Key);
+                float currentValue = _relationshipNetwork.GetRelationshipValue(player.CharacterId, npc.CharacterId, effect.Key);
                 float bonusEffect = effect.Value * 0.5f; // 50% bonus
                 float newValue = Mathf.Clamp(currentValue + bonusEffect, 0f, 10f);
-                _relationshipNetwork.SetRelationshipValue(player.Id, npc.Id, effect.Key, newValue);
+                _relationshipNetwork.SetRelationshipValue(player.CharacterId, npc.CharacterId, effect.Key, newValue);
             }
             
             // Unlock a preference
@@ -929,13 +929,13 @@ namespace CharacterSystem
             // Apply negative effects to relationships
             foreach (RelationshipParameter param in Enum.GetValues(typeof(RelationshipParameter)))
             {
-                float currentValue = _relationshipNetwork.GetRelationshipValue(player.Id, npc.Id, param);
+                float currentValue = _relationshipNetwork.GetRelationshipValue(player.CharacterId, npc.CharacterId, param);
                 float newValue = Mathf.Clamp(currentValue - 0.5f, 0f, 10f); // Slight negative to all parameters
-                _relationshipNetwork.SetRelationshipValue(player.Id, npc.Id, param, newValue);
+                _relationshipNetwork.SetRelationshipValue(player.CharacterId, npc.CharacterId, param, newValue);
             }
             
             // Record critical failure in memory
-            _memoryManager.RecordNegativeImpression(player.Id, npc.Id, choice.Topic.ToString());
+            _memoryManager.RecordNegativeImpression(player.CharacterId, npc.CharacterId, choice.Topic.ToString());
         }
 
         private string GenerateNpcDialogue_(ICharacter player, ICharacter npc, DialogueContext context)
@@ -945,7 +945,7 @@ namespace CharacterSystem
             switch (context.PreviousTopic)
             {
                 case DialogueTopic.Greeting:
-                    return $"Hello {player.Name}, nice to see you today!";
+                    return $"Hello {player.CharacterName}, nice to see you today!";
                 default:
                     return "What would you like to talk about?";
             }
@@ -957,7 +957,7 @@ namespace CharacterSystem
             
             foreach (PreferenceType type in Enum.GetValues(typeof(PreferenceType)))
             {
-                if (npc.Preferences.ContainsKey(type) && !IsPreferenceRevealed(npc, type))
+                if (npc.CharacterPreferences.ContainsKey(type) && !IsPreferenceRevealed(npc, type))
                 {
                     unrevealed.Add(type);
                 }
@@ -978,7 +978,7 @@ namespace CharacterSystem
             {
                 Type = preferenceType,
                 ItemName = GetPreferredItemName(npc, preferenceType),
-                PreferenceLevel = npc.Preferences[preferenceType],
+                PreferenceLevel = npc.CharacterPreferences[preferenceType],
                 IsRevealed = true
             };
             
@@ -996,7 +996,7 @@ namespace CharacterSystem
         {
             // In a real implementation, this would be stored in character data
             // For now, just returning a placeholder
-            return $"{npc.Name}'s favorite {preferenceType.ToString().ToLower()}";
+            return $"{npc.CharacterName}'s favorite {preferenceType.ToString().ToLower()}";
         }
 
         private bool IsPreferenceRevealed(ICharacter npc, PreferenceType type)
@@ -1059,7 +1059,7 @@ namespace CharacterSystem
 
         private string GetDialogueId(ICharacter player, ICharacter npc)
         {
-            return $"{player.Id}_{npc.Id}";
+            return $"{player.CharacterId}_{npc.CharacterId}";
         }
 
         private List<DialogueChoice> GetAllDialogueOptions()
@@ -1145,7 +1145,7 @@ namespace CharacterSystem
             // Check if relationship level is high enough
             float requiredRelationship = GetRequiredRelationshipLevel(type);
             // Assume the player is the sender with ID "player"
-            float actualRelationship = _relationshipNetwork.GetAverageRelationship("player", recipient.Id);
+            float actualRelationship = _relationshipNetwork.GetAverageRelationship("player", recipient.CharacterId);
             
             if (actualRelationship < requiredRelationship)
                 return false;
@@ -1185,7 +1185,7 @@ namespace CharacterSystem
         public MessageResponse GetResponse(ICharacter sender, ICharacter recipient, MessageContent content)
         {
             // Calculate if the NPC will respond
-            float relationshipLevel = _relationshipNetwork.GetAverageRelationship(sender.Id, recipient.Id);
+            float relationshipLevel = _relationshipNetwork.GetAverageRelationship(sender.CharacterId, recipient.CharacterId);
             bool willRespond = UnityEngine.Random.value <= GetResponseProbability(relationshipLevel, content.Type);
             
             if (!willRespond)
@@ -1228,10 +1228,10 @@ namespace CharacterSystem
 
         public List<MessageThread> GetActiveThreads(ICharacter character)
         {
-            if (!_characterThreads.ContainsKey(character.Id))
+            if (!_characterThreads.ContainsKey(character.CharacterId))
                 return new List<MessageThread>();
             
-            return _characterThreads[character.Id]
+            return _characterThreads[character.CharacterId]
                 .OrderByDescending(t => t.LastActivity)
                 .ToList();
         }
@@ -1255,13 +1255,13 @@ namespace CharacterSystem
 
         private bool IsOnCooldown(ICharacter recipient, MessageType type)
         {
-            if (!_characterThreads.ContainsKey(recipient.Id))
+            if (!_characterThreads.ContainsKey(recipient.CharacterId))
                 return false;
             
             // Find the latest message of this type sent to the recipient
             DateTime lastMessageTime = DateTime.MinValue;
             
-            foreach (var thread in _characterThreads[recipient.Id])
+            foreach (var thread in _characterThreads[recipient.CharacterId])
             {
                 foreach (var message in thread.Messages)
                 {
@@ -1298,7 +1298,7 @@ namespace CharacterSystem
         private string GetThreadId(ICharacter character1, ICharacter character2)
         {
             // Sort IDs to ensure consistent thread IDs regardless of who initiated
-            string[] ids = new[] { character1.Id, character2.Id };
+            string[] ids = new[] { character1.CharacterId, character2.CharacterId };
             Array.Sort(ids);
             return string.Join("_", ids);
         }
@@ -1333,17 +1333,17 @@ namespace CharacterSystem
             };
             
             // Add thread to both characters' lists
-            if (!_characterThreads.ContainsKey(character1.Id))
+            if (!_characterThreads.ContainsKey(character1.CharacterId))
             {
-                _characterThreads[character1.Id] = new List<MessageThread>();
+                _characterThreads[character1.CharacterId] = new List<MessageThread>();
             }
             
-            if (!_characterThreads.ContainsKey(character2.Id))
+            if (!_characterThreads.ContainsKey(character2.CharacterId))
             {
-                _characterThreads[character2.Id] = new List<MessageThread>();
+                _characterThreads[character2.CharacterId] = new List<MessageThread>();
             }
             
-            _characterThreads[character1.Id].Add(newThread);
+            _characterThreads[character1.CharacterId].Add(newThread);
             
             // Create a mirrored thread for character2
             MessageThread mirroredThread = new MessageThread
@@ -1355,7 +1355,7 @@ namespace CharacterSystem
                 HasUnread = false
             };
             
-            _characterThreads[character2.Id].Add(mirroredThread);
+            _characterThreads[character2.CharacterId].Add(mirroredThread);
             
             return newThread;
         }
@@ -1403,7 +1403,7 @@ namespace CharacterSystem
             switch (content.Type)
             {
                 case MessageType.Text:
-                    return $"Thanks for messaging me, {sender.Name}!";
+                    return $"Thanks for messaging me, {sender.CharacterName}!";
                 case MessageType.Invitation:
                     bool accepts = DetermineInvitationResponse(sender, recipient, content.Invitation);
                     return accepts 
@@ -1458,7 +1458,7 @@ namespace CharacterSystem
         {
             // Check relationship level
             // Get average relationship level directly
-            float relationshipLevel = _relationshipNetwork.GetAverageRelationship(sender.Id, recipient.Id);
+            float relationshipLevel = _relationshipNetwork.GetAverageRelationship(sender.CharacterId, recipient.CharacterId);
             
             // Base acceptance chance based on relationship
             float acceptanceChance = 0.3f + (relationshipLevel * 0.07f);
@@ -1557,9 +1557,9 @@ namespace CharacterSystem
             // Preference multipliers
             foreach (var prefMult in gift.PreferenceMultipliers)
             {
-                if (recipient.Preferences.ContainsKey(prefMult.Key))
+                if (recipient.CharacterPreferences.ContainsKey(prefMult.Key))
                 {
-                    float prefValue = recipient.Preferences[prefMult.Key];
+                    float prefValue = recipient.CharacterPreferences[prefMult.Key];
                     effect *= 1 + ((prefValue / 10f) * (prefMult.Value - 1));
                 }
             }
@@ -1571,7 +1571,7 @@ namespace CharacterSystem
             }
             
             // Repetition penalty
-            int timesGiven = GetTimesGiftGiven(recipient.Id, gift.Name);
+            int timesGiven = GetTimesGiftGiven(recipient.CharacterId, gift.Name);
             if (timesGiven > 0)
             {
                 float repetitionPenalty = 1f - (_repetitionPenaltyBase * timesGiven);
@@ -1591,7 +1591,7 @@ namespace CharacterSystem
             ApplyGiftEffect(player, recipient, gift, effect);
             
             // Record gift history
-            RecordGiftGiven(player.Id, recipient.Id, gift.Name);
+            RecordGiftGiven(player.CharacterId, recipient.CharacterId, gift.Name);
             
             // Check for preference discovery
             CheckPreferenceDiscovery(player, recipient, gift);
@@ -1608,10 +1608,10 @@ namespace CharacterSystem
 
         public List<GiftPreference> GetRevealedPreferences(ICharacter character)
         {
-            if (!_revealedPreferences.ContainsKey(character.Id))
+            if (!_revealedPreferences.ContainsKey(character.CharacterId))
                 return new List<GiftPreference>();
             
-            return _revealedPreferences[character.Id].Values.ToList();
+            return _revealedPreferences[character.CharacterId].Values.ToList();
         }
 
         private void ApplyGiftEffect(ICharacter player, ICharacter recipient, GiftItem gift, float effect)
@@ -1622,11 +1622,11 @@ namespace CharacterSystem
             // Apply effects to relationship parameters
             foreach (var paramEffect in effectDistribution)
             {
-                float currentValue = _relationshipNetwork.GetRelationshipValue(player.Id, recipient.Id, paramEffect.Key);
+                float currentValue = _relationshipNetwork.GetRelationshipValue(player.CharacterId, recipient.CharacterId, paramEffect.Key);
                 float change = effect * paramEffect.Value;
                 float newValue = Mathf.Clamp(currentValue + change, 0f, 10f);
                 
-                _relationshipNetwork.SetRelationshipValue(player.Id, recipient.Id, paramEffect.Key, newValue);
+                _relationshipNetwork.SetRelationshipValue(player.CharacterId, recipient.CharacterId, paramEffect.Key, newValue);
             }
         }
 
@@ -1706,12 +1706,12 @@ namespace CharacterSystem
         {
             foreach (var prefMult in gift.PreferenceMultipliers)
             {
-                if (recipient.Preferences.ContainsKey(prefMult.Key))
+                if (recipient.CharacterPreferences.ContainsKey(prefMult.Key))
                 {
                     float discoveryChance = 0.3f;
                     
                     // Higher chance if the preference is strong
-                    float prefValue = recipient.Preferences[prefMult.Key];
+                    float prefValue = recipient.CharacterPreferences[prefMult.Key];
                     if (prefValue > 7f)
                     {
                         discoveryChance += 0.3f;
@@ -1734,13 +1734,13 @@ namespace CharacterSystem
         private void RevealPreference(ICharacter player, ICharacter recipient, PreferenceType preferenceType)
         {
             // Initialize dictionaries if needed
-            if (!_revealedPreferences.ContainsKey(recipient.Id))
+            if (!_revealedPreferences.ContainsKey(recipient.CharacterId))
             {
-                _revealedPreferences[recipient.Id] = new Dictionary<PreferenceType, GiftPreference>();
+                _revealedPreferences[recipient.CharacterId] = new Dictionary<PreferenceType, GiftPreference>();
             }
             
             // Check if already revealed
-            if (_revealedPreferences[recipient.Id].ContainsKey(preferenceType))
+            if (_revealedPreferences[recipient.CharacterId].ContainsKey(preferenceType))
                 return;
             
             // Create and store preference info
@@ -1748,11 +1748,11 @@ namespace CharacterSystem
             {
                 Type = preferenceType,
                 ItemName = GetPreferredItemName(recipient, preferenceType),
-                PreferenceLevel = recipient.Preferences[preferenceType],
+                PreferenceLevel = recipient.CharacterPreferences[preferenceType],
                 IsRevealed = true
             };
             
-            _revealedPreferences[recipient.Id][preferenceType] = preference;
+            _revealedPreferences[recipient.CharacterId][preferenceType] = preference;
             
             // Fire event
             InteractionSystem.EventManager.TriggerEvent("OnPreferenceDiscovered", new Dictionary<string, object>
@@ -1767,7 +1767,7 @@ namespace CharacterSystem
         {
             // In a real implementation, this would be stored in character data
             // For now, just returning a placeholder
-            return $"{character.Name}'s favorite {preferenceType.ToString().ToLower()}";
+            return $"{character.CharacterName}'s favorite {preferenceType.ToString().ToLower()}";
         }
     }
 

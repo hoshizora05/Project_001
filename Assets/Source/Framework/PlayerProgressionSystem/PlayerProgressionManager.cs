@@ -169,7 +169,11 @@ namespace PlayerProgression
         {
             return skillSystem.GetSkillLevel(skillId);
         }
-        
+        public float GetSkillExperience(string skillId)
+        {
+            return skillSystem.GetSkillExperience(skillId);
+        }
+
         public float GetReputationScore(string contextId, string traitId = "")
         {
             return reputationSystem.GetReputationScore(contextId, traitId);

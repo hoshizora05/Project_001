@@ -4,9 +4,10 @@ using UnityEngine;
 using CharacterSystem;
 using SocialActivity;
 using System.Linq;
+using ProgressionAndEventSystem;
 
 // CharacterSystem.CharacterManager.Character を SocialActivity.ICharacter および CharacterSystem.ICharacter にアダプトするクラス
-public class CharacterAdapter : SocialActivity.ICharacter, CharacterSystem.ICharacter
+public class CharacterAdapter : SocialActivity.ICharacter, CharacterSystem.ICharacter,ProgressionAndEventSystem.ICharacter
 {
     private CharacterManager.Character _character;
 
@@ -54,20 +55,66 @@ public class CharacterAdapter : SocialActivity.ICharacter, CharacterSystem.IChar
     }
 
     // ------------------  CharacterSystem.ICharacter  ------------------
-    string CharacterSystem.ICharacter.Id => _character.baseInfo.characterId;
-    string CharacterSystem.ICharacter.Name => _character.baseInfo.name;
-    Dictionary<SkillType, float> CharacterSystem.ICharacter.Skills => ConvertSkills();
-    Dictionary<AttributeType, float> CharacterSystem.ICharacter.Attributes => ConvertAttributes();
+    public string CharacterId => _character.baseInfo.characterId;
+    public string CharacterName => _character.baseInfo.name;
+    public Dictionary<SkillType, float> CharacterSkills => ConvertSkills();
+    public Dictionary<AttributeType, float> CharacterAttributes => ConvertAttributes();
 
-    MentalState.EmotionalState CharacterSystem.ICharacter.CurrentEmotionalState => GetCurrentEmotion();
+    public MentalState.EmotionalState CharacterCurrentEmotionalState => GetCurrentEmotion();
 
-    Dictionary<PreferenceType, float> CharacterSystem.ICharacter.Preferences => new();
-    CharacterSystem.LocationType CharacterSystem.ICharacter.CurrentLocation => CharacterSystem.LocationType.Other;
-    CharacterSystem.Schedule CharacterSystem.ICharacter.DailySchedule => new()
+    public Dictionary<PreferenceType, float> CharacterPreferences => new();
+    public CharacterSystem.LocationType CharacterCurrentLocation => CharacterSystem.LocationType.Other;
+    public CharacterSystem.Schedule CharacterDailySchedule => new()
     {
         DailyLocations = new(),
         SpecialSchedules = new()
     };
+
+
+    // ----------- ProgressionAndEventSystem.ICharacter -----------
+    public string Id => _character.baseInfo.characterId;
+
+    public Dictionary<string, float> GetStats()
+    {
+        return new Dictionary<string, float>
+        {
+            { "strength", 5f },
+            { "intelligence", 6f },
+            { "charisma", 4f }
+        };
+    }
+
+    public Dictionary<string, object> GetState()
+    {
+        return new Dictionary<string, object>
+        {
+            { "isPregnant", false },
+            { "mood", "happy" }
+        };
+    }
+
+    public Dictionary<string, float> GetRelationships()
+    {
+        return new Dictionary<string, float>
+        {
+            { "npc_001", 50f },
+            { "npc_002", 30f }
+        };
+    }
+
+    public string GetCurrentLocation()
+    {
+        return "start_area"; // 仮実装
+    }
+
+    private Dictionary<string, bool> _flags = new();
+    public bool HasFlag(string flagName) => _flags.TryGetValue(flagName, out var value) && value;
+    public void SetFlag(string flagName, bool value) => _flags[flagName] = value;
+
+    private Dictionary<string, DateTime> _eventHistory = new();
+    public Dictionary<string, DateTime> GetEventHistory() => _eventHistory;
+    public void RecordEventOccurrence(string eventId) => _eventHistory[eventId] = DateTime.Now;
+
 
     // ------------------  Helper Methods  ------------------
     private MentalState.EmotionalState GetCurrentEmotion()

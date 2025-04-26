@@ -55,7 +55,7 @@ public class ShopItemUI : MonoBehaviour, IInfiniteScrollItem<object>
         {
             //Debug.LogError("ShopController reference is not set in ShopItemUI!");
             // Fallback: シーンから探す (非推奨)
-            shopController = FindObjectOfType<ShopUIController>();
+            shopController = FindFirstObjectByType<ShopUIController>();
             if (shopController == null) return; // 見つからなければ処理中断
         }
 

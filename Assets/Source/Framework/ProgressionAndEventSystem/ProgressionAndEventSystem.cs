@@ -6,7 +6,7 @@ using UnityEngine;
 namespace ProgressionAndEventSystem
 {
     #region Enums
-    
+
     public enum EventType
     {
         Normal,
@@ -15,7 +15,7 @@ namespace ProgressionAndEventSystem
         Anniversary,
         Crisis
     }
-    
+
     public enum ConditionType
     {
         Time,
@@ -24,7 +24,7 @@ namespace ProgressionAndEventSystem
         Location,
         Compound
     }
-    
+
     public enum ComparisonOperator
     {
         Equal,
@@ -36,13 +36,13 @@ namespace ProgressionAndEventSystem
         Contains,
         NotContains
     }
-    
+
     public enum LogicalOperator
     {
         AND,
         OR
     }
-    
+
     public enum EventUICallbackType
     {
         EventStart,
@@ -50,11 +50,11 @@ namespace ProgressionAndEventSystem
         ProgressUpdated,
         ResultShown
     }
-    
+
     #endregion
-    
+
     #region Interfaces
-    
+
     public interface ICharacter
     {
         string Id { get; }
@@ -67,7 +67,7 @@ namespace ProgressionAndEventSystem
         Dictionary<string, DateTime> GetEventHistory();
         void RecordEventOccurrence(string eventId);
     }
-    
+
     public interface IEventManager
     {
         void RegisterEvent(GameEvent gameEvent);
@@ -77,7 +77,7 @@ namespace ProgressionAndEventSystem
         bool CheckEventConditions(GameEvent gameEvent, ICharacter player);
         void UpdateEventStates();
     }
-    
+
     public interface IEventTypeSystem
     {
         void RegisterEventType(EventType eventType);
@@ -85,7 +85,7 @@ namespace ProgressionAndEventSystem
         List<string> GetEventsByType(EventType eventType);
         Dictionary<EventType, int> GetEventTypeStatistics(ICharacter player);
     }
-    
+
     public interface IEventEffectSystem
     {
         void ApplyEventEffects(GameEvent gameEvent, EventResult result, ICharacter player);
@@ -93,7 +93,7 @@ namespace ProgressionAndEventSystem
         Dictionary<string, float> CalculateEffects(GameEvent gameEvent, List<EventChoice> choices);
         List<UnlockedContent> GetUnlockedContentFromEvent(GameEvent gameEvent, EventResult result);
     }
-    
+
     public interface IEventUIManager
     {
         void DisplayEventStart(GameEvent gameEvent);
@@ -102,11 +102,11 @@ namespace ProgressionAndEventSystem
         void DisplayEventResult(EventResult result);
         void RegisterEventUICallback(EventUICallbackType type, Action<object> callback);
     }
-    
+
     #endregion
-    
+
     #region Data Structures
-    
+
     [Serializable]
     public class GameEvent
     {
@@ -124,7 +124,7 @@ namespace ProgressionAndEventSystem
         public TimeSpan? CooldownPeriod;
         public DateTime? ExpirationDate;
     }
-    
+
     [Serializable]
     public class EventCondition
     {
@@ -135,7 +135,7 @@ namespace ProgressionAndEventSystem
         public List<EventCondition> SubConditions;
         public LogicalOperator SubConditionOperator;
     }
-    
+
     [Serializable]
     public class EventStage
     {
@@ -149,7 +149,7 @@ namespace ProgressionAndEventSystem
         public string NextStageId;
         public Dictionary<string, string> ConditionalNextStages;
     }
-    
+
     [Serializable]
     public class DialogueLine
     {
@@ -159,7 +159,7 @@ namespace ProgressionAndEventSystem
         public float Duration;
         public List<EventCondition> VisibilityConditions;
     }
-    
+
     [Serializable]
     public class StageEffect
     {
@@ -168,7 +168,7 @@ namespace ProgressionAndEventSystem
         public float Value;
         public List<EventCondition> EffectConditions;
     }
-    
+
     [Serializable]
     public class EventChoice
     {
@@ -181,7 +181,7 @@ namespace ProgressionAndEventSystem
         public Dictionary<string, object> ResultData;
         public List<EventCondition> UnlockConditions;
     }
-    
+
     [Serializable]
     public class EventResult
     {
@@ -193,7 +193,7 @@ namespace ProgressionAndEventSystem
         public Dictionary<string, object> ResultData;
         public DateTime CompletionTime;
     }
-    
+
     [Serializable]
     public class UnlockedContent
     {
@@ -202,11 +202,11 @@ namespace ProgressionAndEventSystem
         public string Description;
         public Dictionary<string, object> ContentData;
     }
-    
+
     #endregion
-    
+
     #region Implementation
-    
+
     public class EventManager : MonoBehaviour, IEventManager
     {
         private Dictionary<string, GameEvent> _registeredEvents = new Dictionary<string, GameEvent>();
@@ -214,24 +214,24 @@ namespace ProgressionAndEventSystem
         private List<string> _activeEventIds = new List<string>();
         private IEventEffectSystem _effectSystem;
         private IEventTypeSystem _typeSystem;
-        
+
         public event Action<GameEvent> OnEventRegistered;
         public event Action<GameEvent, ICharacter> OnEventTriggered;
         public event Action<GameEvent, EventResult, ICharacter> OnEventCompleted;
         public event Action<UnlockedContent> OnNewContentUnlocked;
-        
+
         public void Awake()
         {
             _effectSystem = GetComponent<IEventEffectSystem>();
             _typeSystem = GetComponent<IEventTypeSystem>();
-            
+
             if (_effectSystem == null)
                 Debug.LogError("EventEffectSystem not found!");
-                
+
             if (_typeSystem == null)
                 Debug.LogError("EventTypeSystem not found!");
         }
-        
+
         public void RegisterEvent(GameEvent gameEvent)
         {
             if (string.IsNullOrEmpty(gameEvent.Id))
@@ -239,14 +239,14 @@ namespace ProgressionAndEventSystem
                 Debug.LogError("Cannot register event with null or empty ID");
                 return;
             }
-            
+
             _registeredEvents[gameEvent.Id] = gameEvent;
             _typeSystem.RegisterEventType(gameEvent.Type);
             OnEventRegistered?.Invoke(gameEvent);
-            
+
             Debug.Log($"Event registered: {gameEvent.Id} - {gameEvent.Title}");
         }
-        
+
         public void UnregisterEvent(string eventId)
         {
             if (_registeredEvents.ContainsKey(eventId))
@@ -259,11 +259,11 @@ namespace ProgressionAndEventSystem
                 Debug.LogWarning($"Attempted to unregister non-existent event: {eventId}");
             }
         }
-        
+
         public List<GameEvent> GetAvailableEvents(ICharacter player)
         {
             List<GameEvent> availableEvents = new List<GameEvent>();
-            
+
             foreach (var eventItem in _registeredEvents.Values)
             {
                 if (CheckEventAvailability(eventItem, player))
@@ -271,12 +271,12 @@ namespace ProgressionAndEventSystem
                     availableEvents.Add(eventItem);
                 }
             }
-            
+
             // Sort events by priority (higher priority first)
             availableEvents.Sort((a, b) => b.Priority.CompareTo(a.Priority));
             return availableEvents;
         }
-        
+
         public void TriggerEvent(string eventId, ICharacter player)
         {
             if (!_registeredEvents.TryGetValue(eventId, out GameEvent gameEvent))
@@ -284,27 +284,27 @@ namespace ProgressionAndEventSystem
                 Debug.LogError($"Failed to trigger event: {eventId} - Event not found");
                 return;
             }
-            
+
             if (!CheckEventAvailability(gameEvent, player))
             {
                 Debug.LogWarning($"Cannot trigger event: {eventId} - Conditions not met");
                 return;
             }
-            
+
             // Check for blocked events
             if (_activeEventIds.Any(id => gameEvent.BlockedEvents.Contains(id)))
             {
                 Debug.LogWarning($"Cannot trigger event: {eventId} - Blocked by active events");
                 return;
             }
-            
+
             _activeEventIds.Add(eventId);
             _lastTriggeredEvents[eventId] = DateTime.Now;
             player.RecordEventOccurrence(eventId);
-            
+
             OnEventTriggered?.Invoke(gameEvent, player);
             Debug.Log($"Event triggered: {gameEvent.Id} - {gameEvent.Title}");
-            
+
             // In a real implementation, this would start the event UI flow
             // For now, we'll just simulate success
             EventResult result = new EventResult
@@ -316,32 +316,32 @@ namespace ProgressionAndEventSystem
                 ResultData = new Dictionary<string, object>(),
                 CompletionTime = DateTime.Now
             };
-            
+
             CompleteEvent(gameEvent, result, player);
         }
-        
+
         private void CompleteEvent(GameEvent gameEvent, EventResult result, ICharacter player)
         {
             _activeEventIds.Remove(gameEvent.Id);
-            
+
             // Apply effects
             _effectSystem.ApplyEventEffects(gameEvent, result, player);
-            
+
             // Check for newly unlocked content
             var unlockedContent = _effectSystem.GetUnlockedContentFromEvent(gameEvent, result);
             result.NewlyUnlockedContent = unlockedContent;
-            
+
             foreach (var content in unlockedContent)
             {
                 OnNewContentUnlocked?.Invoke(content);
             }
-            
+
             // Trigger completion event
             OnEventCompleted?.Invoke(gameEvent, result, player);
-            
+
             Debug.Log($"Event completed: {gameEvent.Id} - Success: {result.Success}");
         }
-        
+
         // Method to handle player making a choice for an event
         // This would be used by the UI system when a player selects a choice
         public void MakeChoice(GameEvent gameEvent, EventChoice choice, ICharacter player)
@@ -351,13 +351,13 @@ namespace ProgressionAndEventSystem
             // 2. Determine success/failure based on success rate
             // 3. Process to the next stage or complete the event
             // 4. Apply immediate effects from the choice
-            
+
             Debug.Log($"Player made choice: {choice.Text} for event: {gameEvent.Title}");
-            
+
             // In the real implementation, this is where you would use the OnEventChoiceMade event
             // OnEventChoiceMade?.Invoke(gameEvent, choice, player);
         }
-        
+
         // Method to cancel an active event
         public void CancelEvent(string eventId, ICharacter player)
         {
@@ -366,35 +366,35 @@ namespace ProgressionAndEventSystem
                 Debug.LogWarning($"Attempted to cancel non-existent event: {eventId}");
                 return;
             }
-            
+
             if (!_activeEventIds.Contains(eventId))
             {
                 Debug.LogWarning($"Attempted to cancel inactive event: {eventId}");
                 return;
             }
-            
+
             _activeEventIds.Remove(eventId);
-            
+
             // In the real implementation, this is where you would use the OnEventCancelled event
             // OnEventCancelled?.Invoke(gameEvent, player);
-            
+
             Debug.Log($"Event cancelled: {gameEvent.Title}");
         }
-        
+
         public bool CheckEventConditions(GameEvent gameEvent, ICharacter player)
         {
             if (gameEvent.Conditions == null || gameEvent.Conditions.Count == 0)
                 return true;
-                
+
             return EvaluateConditions(gameEvent.Conditions, player);
         }
-        
+
         private bool CheckEventAvailability(GameEvent gameEvent, ICharacter player)
         {
             // Check expiration
             if (gameEvent.ExpirationDate.HasValue && DateTime.Now > gameEvent.ExpirationDate.Value)
                 return false;
-                
+
             // Check cooldown
             if (_lastTriggeredEvents.TryGetValue(gameEvent.Id, out DateTime lastTriggered) &&
                 gameEvent.CooldownPeriod.HasValue)
@@ -402,33 +402,33 @@ namespace ProgressionAndEventSystem
                 if (DateTime.Now - lastTriggered < gameEvent.CooldownPeriod.Value)
                     return false;
             }
-            
+
             // Check repeatability
-            if (!gameEvent.IsRepeatable && 
+            if (!gameEvent.IsRepeatable &&
                 player.GetEventHistory().ContainsKey(gameEvent.Id))
                 return false;
-                
+
             // Check dependencies
             foreach (var dependency in gameEvent.DependentEvents)
             {
                 if (!player.GetEventHistory().ContainsKey(dependency))
                     return false;
             }
-            
+
             // Check conditions
             return CheckEventConditions(gameEvent, player);
         }
-        
+
         public void UpdateEventStates()
         {
             // This would be called periodically to check for events whose conditions have been met
             // For performance, we should only check a subset of events each frame
-            
+
             // Implementation depends on the game's needs, but a basic version would be:
             // 1. Check for events that should be triggered automatically
             // 2. Update state of active events (e.g., time limits)
             // 3. Check for conflicting events and resolve priorities
-            
+
             // Basic implementation to check for events with met conditions
             // In a real game, this would be optimized to only check a subset of events each frame
             /* 
@@ -447,7 +447,7 @@ namespace ProgressionAndEventSystem
             }
             */
         }
-        
+
         private bool EvaluateConditions(List<EventCondition> conditions, ICharacter player)
         {
             foreach (var condition in conditions)
@@ -456,40 +456,40 @@ namespace ProgressionAndEventSystem
                 if (!result)
                     return false; // If any condition fails, return false (implicit AND)
             }
-            
+
             return true; // All conditions passed
         }
-        
+
         private bool EvaluateCondition(EventCondition condition, ICharacter player)
         {
             switch (condition.Type)
             {
                 case ConditionType.Compound:
                     return EvaluateCompoundCondition(condition, player);
-                    
+
                 case ConditionType.Time:
                     return EvaluateTimeCondition(condition);
-                    
+
                 case ConditionType.Relationship:
                     return EvaluateRelationshipCondition(condition, player);
-                    
+
                 case ConditionType.State:
                     return EvaluateStateCondition(condition, player);
-                    
+
                 case ConditionType.Location:
                     return EvaluateLocationCondition(condition, player);
-                    
+
                 default:
                     Debug.LogWarning($"Unknown condition type: {condition.Type}");
                     return false;
             }
         }
-        
+
         private bool EvaluateCompoundCondition(EventCondition condition, ICharacter player)
         {
             if (condition.SubConditions == null || condition.SubConditions.Count == 0)
                 return true;
-                
+
             if (condition.SubConditionOperator == LogicalOperator.AND)
             {
                 // All conditions must be true
@@ -511,15 +511,15 @@ namespace ProgressionAndEventSystem
                 return false;
             }
         }
-        
+
         private bool EvaluateTimeCondition(EventCondition condition)
         {
             // In a real implementation, this would check game time, not real time
             // For now, we'll use real time as a placeholder
-            
+
             DateTime now = DateTime.Now;
             DateTime expectedTime = (DateTime)condition.ExpectedValue;
-            
+
             switch (condition.Operator)
             {
                 case ComparisonOperator.Equal:
@@ -538,16 +538,16 @@ namespace ProgressionAndEventSystem
                     return false;
             }
         }
-        
+
         private bool EvaluateRelationshipCondition(EventCondition condition, ICharacter player)
         {
             var relationships = player.GetRelationships();
-            
+
             if (!relationships.TryGetValue(condition.TargetId, out float value))
                 return false;
-                
+
             float expectedValue = Convert.ToSingle(condition.ExpectedValue);
-            
+
             switch (condition.Operator)
             {
                 case ComparisonOperator.Equal:
@@ -566,7 +566,7 @@ namespace ProgressionAndEventSystem
                     return false;
             }
         }
-        
+
         private bool EvaluateStateCondition(EventCondition condition, ICharacter player)
         {
             if (condition.TargetId.StartsWith("flag:"))
@@ -574,7 +574,7 @@ namespace ProgressionAndEventSystem
                 string flagName = condition.TargetId.Substring(5);
                 bool hasFlag = player.HasFlag(flagName);
                 bool expectedValue = (bool)condition.ExpectedValue;
-                
+
                 switch (condition.Operator)
                 {
                     case ComparisonOperator.Equal:
@@ -588,15 +588,15 @@ namespace ProgressionAndEventSystem
             else
             {
                 var states = player.GetState();
-                
+
                 if (!states.TryGetValue(condition.TargetId, out object stateValue))
                     return false;
-                    
+
                 // Handle comparison based on type
                 if (stateValue is float floatValue)
                 {
                     float expectedValue = Convert.ToSingle(condition.ExpectedValue);
-                    
+
                     switch (condition.Operator)
                     {
                         case ComparisonOperator.Equal:
@@ -618,7 +618,7 @@ namespace ProgressionAndEventSystem
                 else if (stateValue is string stringValue)
                 {
                     string expectedValue = condition.ExpectedValue.ToString();
-                    
+
                     switch (condition.Operator)
                     {
                         case ComparisonOperator.Equal:
@@ -633,17 +633,17 @@ namespace ProgressionAndEventSystem
                             return false;
                     }
                 }
-                
+
                 // Default case - direct comparison
                 return stateValue.Equals(condition.ExpectedValue);
             }
         }
-        
+
         private bool EvaluateLocationCondition(EventCondition condition, ICharacter player)
         {
             string currentLocation = player.GetCurrentLocation();
             string expectedLocation = condition.ExpectedValue.ToString();
-            
+
             switch (condition.Operator)
             {
                 case ComparisonOperator.Equal:
@@ -659,12 +659,12 @@ namespace ProgressionAndEventSystem
             }
         }
     }
-    
+
     public class EventTypeSystem : MonoBehaviour, IEventTypeSystem
     {
         private Dictionary<string, EventType> _registeredTypes = new Dictionary<string, EventType>();
         private Dictionary<EventType, List<string>> _eventsByType = new Dictionary<EventType, List<string>>();
-        
+
         public void RegisterEventType(EventType eventType)
         {
             if (!_eventsByType.ContainsKey(eventType))
@@ -672,49 +672,49 @@ namespace ProgressionAndEventSystem
                 _eventsByType[eventType] = new List<string>();
             }
         }
-        
+
         public void RegisterEvent(string eventId, EventType eventType)
         {
             // Register the event type
             RegisterEventType(eventType);
-            
+
             // Add to event types
             if (!_eventsByType[eventType].Contains(eventId))
             {
                 _eventsByType[eventType].Add(eventId);
             }
-            
+
             // Register type by ID
             _registeredTypes[eventId] = eventType;
         }
-        
+
         public EventType GetEventType(string eventId)
         {
             if (_registeredTypes.TryGetValue(eventId, out EventType type))
                 return type;
-                
+
             Debug.LogWarning($"Event type not found for event ID: {eventId}");
             return EventType.Normal; // Default
         }
-        
+
         public List<string> GetEventsByType(EventType eventType)
         {
             if (_eventsByType.TryGetValue(eventType, out List<string> events))
                 return events;
-                
+
             return new List<string>();
         }
-        
+
         public Dictionary<EventType, int> GetEventTypeStatistics(ICharacter player)
         {
             Dictionary<EventType, int> stats = new Dictionary<EventType, int>();
             var history = player.GetEventHistory();
-            
+
             foreach (var eventType in Enum.GetValues(typeof(EventType)).Cast<EventType>())
             {
                 stats[eventType] = 0;
             }
-            
+
             foreach (var eventId in history.Keys)
             {
                 if (_registeredTypes.TryGetValue(eventId, out EventType type))
@@ -722,31 +722,31 @@ namespace ProgressionAndEventSystem
                     stats[type]++;
                 }
             }
-            
+
             return stats;
         }
     }
-    
+
     public class EventEffectSystem : MonoBehaviour, IEventEffectSystem
     {
         // Dependencies
         private EventManager _eventManager;
-        
+
         void Awake()
         {
             _eventManager = GetComponent<EventManager>();
-            
+
             if (_eventManager == null)
                 Debug.LogError("EventManager not found!");
         }
-        
+
         public void ApplyEventEffects(GameEvent gameEvent, EventResult result, ICharacter player)
         {
             if (result == null || !result.Success)
                 return;
-                
+
             Dictionary<string, float> appliedEffects = new Dictionary<string, float>();
-            
+
             // Apply stage effects
             EventStage stage = gameEvent.Stages.FirstOrDefault(s => s.StageId == result.CompletedStageId);
             if (stage != null && stage.Effects != null)
@@ -754,16 +754,16 @@ namespace ProgressionAndEventSystem
                 foreach (var effect in stage.Effects)
                 {
                     bool shouldApply = true;
-                    
+
                     // Check conditions if any
                     if (effect.Value.EffectConditions != null && effect.Value.EffectConditions.Count > 0)
                     {
                         shouldApply = _eventManager.CheckEventConditions(
-                            new GameEvent { Conditions = effect.Value.EffectConditions }, 
+                            new GameEvent { Conditions = effect.Value.EffectConditions },
                             player
                         );
                     }
-                    
+
                     if (shouldApply)
                     {
                         ApplyEffect(player, effect.Value.TargetId, effect.Value.EffectType, effect.Value.Value);
@@ -771,7 +771,7 @@ namespace ProgressionAndEventSystem
                     }
                 }
             }
-            
+
             // Apply choice effects
             if (result.ChoicesMade != null)
             {
@@ -792,25 +792,25 @@ namespace ProgressionAndEventSystem
                     }
                 }
             }
-            
+
             result.AppliedEffects = appliedEffects;
         }
-        
+
         public void ReverseEventEffects(GameEvent gameEvent, ICharacter player)
         {
             // This would reverse effects from an event, used for scenarios like:
             // - Event cancellation
             // - Game state rollback
             // - "Undo" functionality
-            
+
             // Implementation depends on how effects are stored and tracked
             Debug.LogWarning("ReverseEventEffects not fully implemented");
         }
-        
+
         public Dictionary<string, float> CalculateEffects(GameEvent gameEvent, List<EventChoice> choices)
         {
             Dictionary<string, float> totalEffects = new Dictionary<string, float>();
-            
+
             // Calculate stage effects (assuming current/last stage)
             EventStage stage = gameEvent.Stages.LastOrDefault();
             if (stage != null && stage.Effects != null)
@@ -820,11 +820,11 @@ namespace ProgressionAndEventSystem
                     string key = $"{effect.Value.EffectType}:{effect.Value.TargetId}";
                     if (!totalEffects.ContainsKey(key))
                         totalEffects[key] = 0;
-                    
+
                     totalEffects[key] += effect.Value.Value;
                 }
             }
-            
+
             // Calculate choice effects
             if (choices != null)
             {
@@ -837,41 +837,41 @@ namespace ProgressionAndEventSystem
                             string key = $"choice:{effect.Key}";
                             if (!totalEffects.ContainsKey(key))
                                 totalEffects[key] = 0;
-                            
+
                             totalEffects[key] += effect.Value;
                         }
                     }
                 }
             }
-            
+
             return totalEffects;
         }
-        
+
         public List<UnlockedContent> GetUnlockedContentFromEvent(GameEvent gameEvent, EventResult result)
         {
             List<UnlockedContent> unlockedContent = new List<UnlockedContent>();
-            
+
             // This would check for content that should be unlocked based on the event result
             // For example, new events, locations, activities, or character information
-            
+
             // Implementation depends on game-specific unlocking rules
             // For now, we'll assume it's defined in the result data
-            
-            if (result.ResultData != null && 
+
+            if (result.ResultData != null &&
                 result.ResultData.TryGetValue("unlockedContent", out object contentData) &&
                 contentData is List<UnlockedContent> content)
             {
                 unlockedContent.AddRange(content);
             }
-            
+
             return unlockedContent;
         }
-        
+
         private void ApplyEffect(ICharacter player, string targetId, string effectType, float value)
         {
             // Implement effect application based on the target and effect type
             // Examples:
-            
+
             if (targetId.StartsWith("relationship:"))
             {
                 string characterId = targetId.Substring(13);
@@ -898,62 +898,62 @@ namespace ProgressionAndEventSystem
             }
         }
     }
-    
+
     public class EventUIManager : MonoBehaviour, IEventUIManager
     {
         private Dictionary<EventUICallbackType, List<Action<object>>> _callbacks = new Dictionary<EventUICallbackType, List<Action<object>>>();
-        
+
         public void DisplayEventStart(GameEvent gameEvent)
         {
             Debug.Log($"Displaying event start: {gameEvent.Title}");
             InvokeCallbacks(EventUICallbackType.EventStart, gameEvent);
-            
+
             // In a real implementation, this would activate UI components
             // and set up the event display
         }
-        
+
         public void ShowEventChoices(List<EventChoice> choices)
         {
             Debug.Log($"Showing {choices.Count} event choices");
             InvokeCallbacks(EventUICallbackType.ChoicesShown, choices);
-            
+
             // In a real implementation, this would display choice UI elements
         }
-        
+
         public void DisplayEventProgress(float progress, string stageDescription)
         {
             Debug.Log($"Event progress: {progress:P} - {stageDescription}");
-            
+
             var progressData = new Dictionary<string, object>
             {
                 { "progress", progress },
                 { "description", stageDescription }
             };
-            
+
             InvokeCallbacks(EventUICallbackType.ProgressUpdated, progressData);
-            
+
             // In a real implementation, this would update progress bars and descriptions
         }
-        
+
         public void DisplayEventResult(EventResult result)
         {
             Debug.Log($"Displaying event result - Success: {result.Success}");
             InvokeCallbacks(EventUICallbackType.ResultShown, result);
-            
+
             // In a real implementation, this would show result UI with effects,
             // unlocked content, etc.
         }
-        
+
         public void RegisterEventUICallback(EventUICallbackType type, Action<object> callback)
         {
             if (!_callbacks.ContainsKey(type))
             {
                 _callbacks[type] = new List<Action<object>>();
             }
-            
+
             _callbacks[type].Add(callback);
         }
-        
+
         private void InvokeCallbacks(EventUICallbackType type, object data)
         {
             if (_callbacks.TryGetValue(type, out List<Action<object>> callbacks))
@@ -972,45 +972,92 @@ namespace ProgressionAndEventSystem
             }
         }
     }
-    
-    // Main system controller that ties everything together
+    #endregion
     public class ProgressionAndEventSystem : MonoBehaviour
     {
+        // Singleton instance
+        private static ProgressionAndEventSystem _instance;
+
+        // Public accessor for the singleton instance
+        public static ProgressionAndEventSystem Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    // Check if an instance already exists in the scene
+                    _instance = FindFirstObjectByType<ProgressionAndEventSystem>();
+
+                    // If no instance exists, create a new GameObject with the component
+                    if (_instance == null)
+                    {
+                        GameObject obj = new GameObject("ProgressionAndEventSystem");
+                        _instance = obj.AddComponent<ProgressionAndEventSystem>();
+                        DontDestroyOnLoad(obj); // Make it persistent across scenes
+                    }
+                }
+
+                return _instance;
+            }
+        }
+
         private IEventManager _eventManager;
         private IEventTypeSystem _eventTypeSystem;
         private IEventEffectSystem _eventEffectSystem;
         private IEventUIManager _eventUIManager;
-        
+
+        private bool _isInitialized = false;
+
         private void Awake()
         {
+            // Singleton pattern enforcement
+            if (_instance != null && _instance != this)
+            {
+                Debug.LogWarning("More than one ProgressionAndEventSystem instance found. Destroying duplicate.");
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            if (_isInitialized)
+                return;
+
             // Initialize components
             _eventManager = GetComponent<IEventManager>();
             _eventTypeSystem = GetComponent<IEventTypeSystem>();
             _eventEffectSystem = GetComponent<IEventEffectSystem>();
             _eventUIManager = GetComponent<IEventUIManager>();
-            
+
             if (_eventManager == null)
-                gameObject.AddComponent<EventManager>();
-                
+                _eventManager = gameObject.AddComponent<EventManager>();
+
             if (_eventTypeSystem == null)
-                gameObject.AddComponent<EventTypeSystem>();
-                
+                _eventTypeSystem = gameObject.AddComponent<EventTypeSystem>();
+
             if (_eventEffectSystem == null)
-                gameObject.AddComponent<EventEffectSystem>();
-                
+                _eventEffectSystem = gameObject.AddComponent<EventEffectSystem>();
+
             if (_eventUIManager == null)
-                gameObject.AddComponent<EventUIManager>();
-                
+                _eventUIManager = gameObject.AddComponent<EventUIManager>();
+
+            _isInitialized = true;
             Debug.Log("Progression and Event System initialized");
         }
-        
+
         private void Start()
         {
             // Connect to other game systems
             // Load event data
             // Initialize event listeners
         }
-        
+
         private void Update()
         {
             // Regular updates for time-based triggers and active events
@@ -1019,43 +1066,101 @@ namespace ProgressionAndEventSystem
                 _eventManager.UpdateEventStates();
             }
         }
-        
+
         // Public API methods
-        
+
         public void RegisterEvent(GameEvent gameEvent)
         {
+            if (!_isInitialized)
+                Initialize();
+
             _eventManager.RegisterEvent(gameEvent);
         }
-        
+
         public List<GameEvent> GetAvailableEvents(ICharacter player)
         {
+            if (!_isInitialized)
+                Initialize();
+
             return _eventManager.GetAvailableEvents(player);
         }
-        
+
         public void TriggerEvent(string eventId, ICharacter player)
         {
+            if (!_isInitialized)
+                Initialize();
+
             _eventManager.TriggerEvent(eventId, player);
         }
-        
+
         public Dictionary<EventType, int> GetEventStatistics(ICharacter player)
         {
+            if (!_isInitialized)
+                Initialize();
+
             return _eventTypeSystem.GetEventTypeStatistics(player);
         }
-        
+
+        // Access to subsystems
+
+        public IEventManager EventManager
+        {
+            get
+            {
+                if (!_isInitialized)
+                    Initialize();
+
+                return _eventManager;
+            }
+        }
+
+        public IEventTypeSystem EventTypeSystem
+        {
+            get
+            {
+                if (!_isInitialized)
+                    Initialize();
+
+                return _eventTypeSystem;
+            }
+        }
+
+        public IEventEffectSystem EventEffectSystem
+        {
+            get
+            {
+                if (!_isInitialized)
+                    Initialize();
+
+                return _eventEffectSystem;
+            }
+        }
+
+        public IEventUIManager EventUIManager
+        {
+            get
+            {
+                if (!_isInitialized)
+                    Initialize();
+
+                return _eventUIManager;
+            }
+        }
+
         // Utility methods for editor and debugging
-        
+
         public void LogEventStructure(GameEvent gameEvent)
         {
             Debug.Log($"Event: {gameEvent.Id} - {gameEvent.Title}");
             Debug.Log($"Type: {gameEvent.Type}, Priority: {gameEvent.Priority}");
             Debug.Log($"Stages: {gameEvent.Stages.Count}, Repeatable: {gameEvent.IsRepeatable}");
-            
+
             // Log dependencies
             if (gameEvent.DependentEvents != null && gameEvent.DependentEvents.Count > 0)
             {
                 Debug.Log($"Dependencies: {string.Join(", ", gameEvent.DependentEvents)}");
             }
-            
+
             // Log blocked events
             if (gameEvent.BlockedEvents != null && gameEvent.BlockedEvents.Count > 0)
             {
@@ -1063,6 +1168,4 @@ namespace ProgressionAndEventSystem
             }
         }
     }
-    
-    #endregion
 }
