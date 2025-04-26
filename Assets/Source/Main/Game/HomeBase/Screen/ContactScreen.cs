@@ -7,6 +7,6 @@ using CharacterSystem;
 using ProgressionAndEventSystem;
 
 
-public class ContactScreen : ConversationScreen
+public class ContactScreen : BaseScreen
 {
 }

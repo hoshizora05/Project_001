@@ -235,7 +235,17 @@ namespace CharacterSystem
             
             return networkSystem.CreateCommunicationChannel(type, participatingEntities, bandwidth, noiseLevel);
         }
-        
+
+        /// <summary>
+        /// Gets all entities in the relationship network
+        /// </summary>
+        /// <returns>List of all entities</returns>
+        public List<EntityData> GetAllEntities()
+        {
+            // Get all entities from the network system
+            return networkSystem.GetAllEntities();
+        }
+
         #endregion
     }
 

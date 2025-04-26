@@ -7,6 +7,7 @@ using PlayerProgression;
 using ResourceManagement;
 using InformationManagementUI;
 using SocialActivity;
+using ProgressionAndEventSystem;
 using TMPro;
 
 /// <summary>
@@ -39,6 +40,7 @@ public class WorkScreen : BaseScreen
     private ICurrencySystem currencySystem;
     private IInventorySystem inventoryManager;
     private CharacterAdapter characterAdapter;
+    private ProgressionAndEventSystem.ProgressionAndEventSystem progressionAndEventSystem;
 
     protected override void Awake()
     {
@@ -50,6 +52,7 @@ public class WorkScreen : BaseScreen
         eventBus = LifeResourceSystem.ServiceLocator.Get<LifeResourceSystem.EventBusReference>();
         currencySystem = ResourceManagement.ServiceLocator.Get<ICurrencySystem>();
         inventoryManager = ResourceManagement.ServiceLocator.Get<IInventorySystem>();
+        progressionAndEventSystem = ProgressionAndEventSystem.ProgressionAndEventSystem.Instance;
     }
 
     private void Start()
@@ -307,7 +310,7 @@ public class WorkScreen : BaseScreen
         float randVal = Random.value;
         if (randVal <= job.eventTriggerProbability)
         {
-            eventManager.TriggerEvent(job.eventID, null); // プレイヤーを ICharacter 型で渡すなら適宜調整
+            progressionAndEventSystem.EventManager.TriggerEvent(job.eventID, null); // プレイヤーを ICharacter 型で渡すなら適宜調整
             Debug.Log($"イベント [{job.eventID}] が発生しました。");
         }
     }

@@ -794,6 +794,15 @@ namespace CharacterSystem
                 .ToList();
         }
 
+        /// <summary>
+        /// Gets all entities in the relationship network
+        /// </summary>
+        /// <returns>List of all entities</returns>
+        public List<EntityData> GetAllEntities()
+        {
+            return _relationshipGraph.entities.ToList();
+        }
+
         #endregion
 
         #region Internal Helper Methods

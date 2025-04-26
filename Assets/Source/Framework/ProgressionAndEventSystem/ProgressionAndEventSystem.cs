@@ -123,6 +123,29 @@ namespace ProgressionAndEventSystem
         public bool IsRepeatable;
         public TimeSpan? CooldownPeriod;
         public DateTime? ExpirationDate;
+
+        /// <summary>
+        /// Deep clone the GameEvent instance to avoid asset mutation.
+        /// </summary>
+        public GameEvent DeepClone()
+        {
+            return new GameEvent
+            {
+                Id = Id,
+                Title = Title,
+                Description = Description,
+                Type = Type,
+                Priority = Priority,
+                Conditions = new List<EventCondition>(Conditions),
+                Stages = new List<EventStage>(Stages),
+                EventData = new Dictionary<string, object>(EventData),
+                DependentEvents = new List<string>(DependentEvents),
+                BlockedEvents = new List<string>(BlockedEvents),
+                IsRepeatable = IsRepeatable,
+                CooldownPeriod = CooldownPeriod,
+                ExpirationDate = ExpirationDate
+            };
+        }
     }
 
     [Serializable]
